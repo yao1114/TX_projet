@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.model_selection import GridSearchCV, LeaveOneOut
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score, f1_score
 
@@ -37,10 +37,17 @@ def read_and_split_data(file_path, test_size=0.2, random_state=40):
 # Define a function to evaluate model performance
 def evaluate_model_performance(model, X_test, y_test):
     y_pred = model.predict(X_test)
+    f1 = f1_score(y_test, y_pred, average='weighted', labels=[1, 2])
+
     print('Accuracy: ', accuracy_score(y_test, y_pred))
-    print('Confusion Matrix: \n', confusion_matrix(y_test, y_pred, normalize='true'))
-    print('AUC: ', roc_auc_score(y_test, y_pred))
-    print('F1-score: ', f1_score(y_test, y_pred))
+    print('Accuracy for class Stress: {:.3f}'.format(accuracy_score(y_test[y_test==1], y_pred[y_test==1])))
+    print('Accuracy for class Relax: {:.3f}'.format(accuracy_score(y_test[y_test==2], y_pred[y_test==2])))
+    print('\nConfusion Matrix: \n', confusion_matrix(y_test, y_pred, normalize='true'))
+    print('\nAUC: ', roc_auc_score(y_test, y_pred))
+    print('\nF1-score for class Stress: {:.3f}'.format(f1_score(y_test[y_test==1], y_pred[y_test==1], average='weighted')))
+    print('F1-score for class Relax: {:.3f}'.format(f1_score(y_test[y_test==2], y_pred[y_test==2], average='weighted')))
+    print('F1-score:', f1_score(y_test, y_pred))
+
 
 # Define a pipeline to link data preprocessing and model training and evaluation
 pipeline = Pipeline([
@@ -59,7 +66,7 @@ param_grid = {
 grid_search = GridSearchCV(
     pipeline,
     param_grid=param_grid,
-    cv=5, # 5-fold cross-validation
+    cv=LeaveOneOut(), # LeaveOneOut
     scoring='accuracy',
     n_jobs=-1,
 )
